@@ -1,0 +1,70 @@
+---
+title: "TIdyTuesdayKenyaCensus"
+author: "Jeff Grayum"
+date: "2/4/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Loading Libraries
+```{r}
+library(tidyverse)
+library(tidytuesdayR)
+library(scales)
+library(ggthemes)
+library(janitor)
+```
+
+Loading and cleaning datasets.
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2021-01-19')
+
+households <- tuesdata$households %>%
+  clean_names() %>%
+  mutate(county = str_trim(county))
+
+crops <- tuesdata$crops %>%
+  clean_names()
+
+gender <- tuesdata$gender %>%
+  clean_names()
+```
+
+Starting with "gender" dataset.
+```{r}
+gender %>%
+  filter(county != "Total") %>%
+  mutate(county = fct_reorder(county, total)) %>%
+  ggplot(aes(total, county)) +
+  geom_col() +
+  scale_x_continuous(labels = comma) +
+  labs(x = "Population",
+       y = "County",
+       title = "Populations of Kenyan Counties",
+       caption = "Source: rKenyaCensus") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(),
+        text = element_text(family = "Times New Roman"))
+
+gender %>%
+  filter(county != "Total") %>%
+  gather(gender, population, male, female, intersex) %>%
+  mutate(county = fct_reorder(county, total, sum)) %>%
+  ggplot(aes(total, county, fill = gender)) +
+  geom_col() +
+  scale_x_continuous(labels = comma) +
+  labs(x = "Population",
+       y = "County",
+       fill = "Gender",
+       title = "Populations of Kenyan Counties",
+       caption = "Source: rKenyaCensus") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(),
+        text = element_text(family = "Times New Roman"))
+```
+
