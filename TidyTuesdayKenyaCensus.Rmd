@@ -29,7 +29,11 @@ households <- tuesdata$households %>%
   mutate(county = str_trim(county))
 
 crops <- tuesdata$crops %>%
-  clean_names()
+  clean_names() %>%
+  gather(crop, households, -sub_county, -farming) %>%
+  filter(!is.na(households)) %>%
+  mutate(county = str_to_title(sub_county)) %>%
+  filter(county != "Kenya") 
 
 gender <- tuesdata$gender %>%
   clean_names()
@@ -55,7 +59,7 @@ gender %>%
   filter(county != "Total") %>%
   gather(gender, population, male, female, intersex) %>%
   mutate(county = fct_reorder(county, total, sum)) %>%
-  ggplot(aes(total, county, fill = gender)) +
+  ggplot(aes(population, county, fill = gender)) +
   geom_col() +
   scale_x_continuous(labels = comma) +
   labs(x = "Population",
@@ -66,5 +70,76 @@ gender %>%
   theme_fivethirtyeight() +
   theme(axis.title = element_text(),
         text = element_text(family = "Times New Roman"))
+
+gender %>%
+  filter(county != "Total") %>%
+  mutate(pct_male = male / total) %>%
+  arrange(desc(pct_male)) %>%
+  ggplot(aes(total, pct_male)) +
+  geom_point() +
+  geom_text(aes(label = county),
+            vjust = 1, hjust = 1) +
+  geom_hline(color = "orange", yintercept = 0.5) +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "County population",
+       y = "% male",
+       title = "Percentage of male's in Kenyan counties",
+       caption = "Source: rKenyaCensus") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(),
+        text = element_text(family = "Times New Roman"))
+```
+
+
+```{r}
+households %>%
+  filter(county != "Kenya") %>%
+  arrange(desc(average_household_size)) %>%
+  ggplot(aes(population, average_household_size)) +
+  geom_point() +
+  geom_text(aes(label = county),
+            vjust = 1, hjust = 1) +
+  scale_x_log10(labels = comma) +
+  expand_limits(y = 0) +
+  labs(x = "County population",
+       y = "Avg household size",
+       title = "Average household size in Kenya, by county",
+       caption = "Source: rKenyaCensus") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(),
+        text = element_text(family = "Times New Roman"))
+```
+
+```{r}
+crop_counties <- crops %>%
+  mutate(county = fct_reorder(county, households, sum),
+         crop = fct_reorder(crop, households, sum)) 
+
+crop_counties %>%
+  ggplot(aes(households, county, fill = crop)) +
+  geom_col() +
+  labs(x = "Number of households farming crop",
+       y = "",
+       fill = "Crop",
+       title = "Farming in Kenyan counties",
+       caption = "Source: rKenyaCensus") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(),
+        text = element_text(family = "Times New Roman"))
+
+crop_counties %>%
+  complete(crop, county, fill = list(households = 0)) %>%
+  ggplot(aes(crop, county, fill = households)) +
+  geom_tile() +
+  labs(x = "Crop",
+       y = "",
+       fill = "Number of households",
+       title = "Farming in Kenyan counties",
+       caption = "Source: rKenyaCensus") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(),
+        text = element_text(family = "Times New Roman"),
+        axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
