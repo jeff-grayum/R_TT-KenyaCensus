@@ -26,7 +26,8 @@ tuesdata <- tidytuesdayR::tt_load('2021-01-19')
 
 households <- tuesdata$households %>%
   clean_names() %>%
-  mutate(county = str_trim(county))
+  mutate(county = str_trim(county),
+         county = str_replace_all(county, "([a-z])([A-Z])", "\\1 \\2"))
 
 crops <- tuesdata$crops %>%
   clean_names() %>%
@@ -141,5 +142,22 @@ crop_counties %>%
   theme(axis.title = element_text(),
         text = element_text(family = "Times New Roman"),
         axis.text.x = element_text(angle = 90, hjust = 1))
+
+crop_counties %>%
+  inner_join(households, by = "county") %>%
+  mutate(pct_households = households / number_of_households) %>%
+  filter(crop == "avocado") %>%
+  mutate(county = fct_reorder(county, pct_households)) %>%
+  ggplot(aes(pct_households, county, sum)) + 
+  geom_col() +
+  labs(x = "% of households farming avocado",
+       y = "County",
+       title = "Which Kenyan counties produce the most avocado's?") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(),
+        text = element_text(family = "Times New Roman")) +
+  scale_x_continuous(labels = percent)
+
+
 ```
 
